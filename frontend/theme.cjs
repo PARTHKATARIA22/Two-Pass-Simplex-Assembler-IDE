@@ -1,0 +1,8 @@
+const fs = require('fs');
+let c = fs.readFileSync('src/App.jsx', 'utf8');
+c = c.split('bg-[#111827]').join('bg-[#000000]'); 
+c = c.split('bg-[#1f2937]').join('bg-[#0a0a0a]'); 
+c = c.split('bg-[#030712]').join('bg-[#000000]'); 
+c = c.split('border-[#374151]').join('border-[#222222]');
+fs.writeFileSync('src/App.jsx', c);
+console.log('Theme applied');
