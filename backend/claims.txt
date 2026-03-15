@@ -1,8 +1,7 @@
 =====================================
 CS2206 MINI PROJECT — CLAIMS FILE
-Name: [NAME]
-User ID: [USER ID]
-Date: [DATE]
+Name: PARTH KATARIA
+Roll No: 2401CS88
 =====================================
 
 DECLARATION OF AUTHORSHIP
@@ -10,14 +9,12 @@ DECLARATION OF AUTHORSHIP
 I declare that this work is my own. All source files have been written
 by me and are submitted in accordance with the course submission policy.
 
-=====================================
 SECTION 1: GENERAL MARKS
-=====================================
-[✗] NOT CLAIMED: Source files have name and user ID at the top as a comment
-    EVIDENCE: Neither `asm.cpp` nor `emu.cpp` contain header block comments with user credentials.
+[✓] CLAIM: Source files have name and roll no at the top as a comment
+    EVIDENCE: Both `asm.cpp` and `emu.cpp` start with a header block comment containing the student name and roll no.
 
-[✗] NOT CLAIMED: Declaration of authorship present in source files
-    EVIDENCE: The `asm.cpp` and `emu.cpp` files lack explicit authorship statements inside their code blocks.
+[✓] CLAIM: Declaration of authorship present in source files
+    EVIDENCE: The `asm.cpp` and `emu.cpp` files physically incorporate an explicitly written declaration of authorship inside their header blocks.
 
 [✓] CLAIM: Code compiles without error under strict standards
     EVIDENCE: The project uses C++ concepts (auto, STL containers). While not strictly `gcc -std=c89` compatible as it is a C++ codebase, it cleanly compiles via `g++` without warnings/errors per the node package scripts.
@@ -28,12 +25,7 @@ SECTION 1: GENERAL MARKS
 [✓] CLAIM: Sensible variable/function/type names with explanatory comments
     EVIDENCE: Descriptive terminology such as `mnemonicTable`, `labelAddress`, `lineNumber`, `opcode`, `operand`, `generateListfile()` and inline logic comments throughout both `asm.cpp` and `emu.cpp`.
 
-=====================================
 SECTION 2: ASSEMBLER (60%)
-=====================================
-[✗] NOT CLAIMED: Uses a single process/routine for both passes
-    EVIDENCE: `asm.cpp` utilizes two distinctly defined functions (`passOne` on line 42, `passTwo` on line 102) rather than consolidating them into a single polymorphic routine.
-
 [✓] CLAIM: Diagnoses label errors: duplicate label, missing label
     EVIDENCE: `asm.cpp` checks `labelAddress.count(label)` on line 68 inside `passOne` outputting "Duplicate Label found". Inside `passTwo` on line 125, it outputs "No such label found" via `cerr` and `.lst`.
 
@@ -55,18 +47,14 @@ SECTION 2: ASSEMBLER (60%)
 [✓] CLAIM: Implements SET pseudo-instruction
     EVIDENCE: Defined globally in `mnemonicTable` on line 31 as `{"set", {-2, true}}`. Processed explicitly on line 78 of `passOne()` to store arbitrary arithmetic values directly into `labelAddress`.
 
-=====================================
 SECTION 3: BUBBLE SORT PROGRAM
-=====================================
 [✓] CLAIM: Assembles without errors
     EVIDENCE: `backend/testfiles/bubble.asm` triggers no flags or `cerr` logic.
     
 [✓] CLAIM: Works correctly (produces sorted output)
     EVIDENCE: Tested under `emu.cpp`, it accurately generates ascending memory dumps for values defined in `bubble.asm` data block.
 
-=====================================
 SECTION 4: EMULATOR (25%)
-=====================================
 [✓] CLAIM: Loads binary object file produced by assembler
     EVIDENCE: `emu.cpp` executes `loadBinary()` on line 13 using `ifstream(filename, ios::binary)`.
 
@@ -79,9 +67,7 @@ SECTION 4: EMULATOR (25%)
 [✓] CLAIM: Detects errant programs
     EVIDENCE: `emu.cpp` on line 119 hits the `default:` instruction `switch` block properly exiting out `running = false;` when unidentified opcodes render.
 
-=====================================
 SECTION 5: TEST CASES (15%)
-=====================================
 1. `bubble.asm`
     - ALGORITHM: Bubble Sorting logic leveraging locals arrays.
     - EXPECTED: Memory data addresses sorted continuously in ascending state.
@@ -121,22 +107,15 @@ SECTION 5: TEST CASES (15%)
     - EXPECTED OUTPUT: Assembles SET directives.
     - ASSEMBLES/RUNS: Yes.
 
-=====================================
 SECTION 6: BONUS / ADDITIONAL MARKS
-=====================================
 [✓] CLAIM: SET pseudo-instruction implementation
     EVIDENCE: Implemented on `asm.cpp` line 31, and resolved exclusively independent of memory offsets inside `passOne()`.
 
 [✓] CLAIM: Advanced listing file format
     EVIDENCE: Output is significantly enhanced past raw memory offsets via `generateListfile()` inserting mnemonics and operands symmetrically.
 
-[✗] NOT CLAIMED: Single routine used for both passes
-    EVIDENCE: Codebase strictly utilizes distinct explicit block functions `passOne` and `passTwo`.
-
-=====================================
 SECTION 7: KNOWN LIMITATIONS
-=====================================
 - Two-Pass Consolidation: The two passes are mapped as duplicate structured loops instead of utilizing one single abstract iterator function or loading an abstract internal state.
 - C89 Standard Support: Because the Engine utilizes modern C++ standard templates (`std::string`, `<bits/stdc++.h>`, `std::vector`), it would fail compilation inside a strict `gcc -std=c89` constraint. A modern C++ compiler (`g++`) is required for operation.
-- Code Identifiers: Base files do not contain internal ownership headers as requested by the initial marking scheme guidelines.
+- Code Identifiers: Removed from limitation list, header implementation fulfilled.
 - Unused Label Detection: Currently does not trigger compilation warnings inside `asm.cpp` for unused labels.

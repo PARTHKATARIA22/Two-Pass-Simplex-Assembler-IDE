@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * CS2206 Mini Project — Two Pass Assembler / Emulator
+ * Name:     PARTH KATARIA
+ * Roll NO:   2401CS88
+ * Date:        March 2026
+ *
+ * DECLARATION OF AUTHORSHIP
+ * --------------------------
+ * I declare that this coursework submission is entirely my own
+ * work. I have not copied code from any other student or any
+ * external source except where explicitly referenced. I have
+ * not shared my code with any other student. I understand that
+ * plagiarism is a serious academic offence and accept the
+ * consequences of any such action.
+ ******************************************************************************/
 #include <bits/stdc++.h>
 using namespace std;
 
