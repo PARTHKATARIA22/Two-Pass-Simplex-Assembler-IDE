@@ -30,11 +30,25 @@ void loadBinary(string filename){
 //         cout<<hex<<setfill('0')<<setw(8)<<i<<" "<<setw(8)<<memory[i]<<dec<<endl;
 //     }
 // }
-void dumpmemory(){
-    cout << "Sorted array:" << endl;
-    for(int i = 51; i < 56; i++){
-        cout << "array[" << (i-51) << "] = " << dec << memory[i] << endl;
+void dumpmemory(int programEnd) {
+    cout << "\nData Section (non-zero values):" << endl;
+    cout << left << setw(14) << "Address"
+         << setw(14) << "Hex"
+         << "Decimal" << endl;
+    cout << string(40, '-') << endl;
+
+    bool found = false;
+    for(int i = programEnd; i < 200; i++) {
+        if(memory[i] != 0) {
+            unsigned int uval = (unsigned int)memory[i];
+            cout << "mem[" << dec << setfill(' ') << setw(6) << i << "] = "
+                 << "0x" << hex << setfill('0') << setw(8) << uval
+                 << "  (" << dec << setfill(' ') << memory[i] << ")"
+                 << endl;
+            found = true;
+        }
     }
+    if(!found) cout << "  (no non-zero values found)" << endl;
 }
 int main(int argc,char* argv[]){
     if(argc<2){
@@ -121,8 +135,8 @@ int main(int argc,char* argv[]){
                 running = false;
         }
     }
+    dumpmemory(PC);
     cout << "HALT encountered. Final Register Status:" << endl;
     cout << "A: " << A << " B: " << B << " PC: " << PC << " SP: " << SP << endl;
-    dumpmemory();
     return 0;
 }

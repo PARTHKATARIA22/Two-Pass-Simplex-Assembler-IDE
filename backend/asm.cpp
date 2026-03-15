@@ -34,6 +34,7 @@ map<string,Instruction> mnemonicTable{
 };
 
 map<string,int> labelAddress;
+bool hasError = false;
 
 // basic syntax
 // fstream lib -> ifstream => read ; ofstream => write to file ; fstream => read+write
@@ -48,8 +49,10 @@ void passOne(string filename){
     ifstream file(filename);
     string line;
     int PC=0;
+    int lineNumber=0;
 
     while(getline(file,line)){
+        lineNumber++;
         
         size_t commentPos=line.find(';');
         if(commentPos != string::npos){
@@ -67,14 +70,16 @@ void passOne(string filename){
         if(colonpos!=string::npos){
             label=line.substr(0,colonpos);
             if(!isalpha(label[0])){
-                cerr<<"Label must start with a Letter, Invalid Label: '"<<label<<"'"<<endl;
+                cerr<<"Error on line "<<lineNumber<<": Label must start with a Letter, Invalid Label: '"<<label<<"'"<<endl;
+                hasError=true;
             }
             line.erase(0,colonpos+1);
 
             line.erase(0,line.find_first_not_of(" \t\r\n"));
 
             if(labelAddress.count(label)){
-                cerr<<"Error:Duplicate Label found: '"<< label << "'"<<endl;
+                cerr<<"Error on line "<<lineNumber<<": Duplicate Label found: '"<< label << "'"<<endl;
+                hasError=true;
             }else{
                 labelAddress[label]=PC;
             }
@@ -85,7 +90,7 @@ void passOne(string filename){
         ss>>mnemonic>>operand;
         for(auto &c : mnemonic) c = tolower(c);
         if(!mnemonic.empty()){
-            if(mnemonic=="SET"){
+            if(mnemonic=="set"){
                 if(!label.empty()){
                     
                     try{
@@ -93,11 +98,13 @@ void passOne(string filename){
                         labelAddress[label]=stoi(operand,&processedCharCnt,0);// 0 for auto detection of the type out of hexm,octal etc
 
                         if(processedCharCnt<operand.size()){
-                            cerr<<"Invalid Number format: '"<<operand<<"'"<<endl;
+                            cerr<<"Error on line "<<lineNumber<<": Invalid Number format: '"<<operand<<"'"<<endl;
+                            hasError=true;
                         }
                     }catch(...){
                         // catch any exception
-                        cerr<< " Not a valid number '"<<operand<<"'"<<endl;
+                        cerr<< "Error on line "<<lineNumber<<": Not a valid number '"<<operand<<"'"<<endl;
+                        hasError=true;
                     }
 
                 }
@@ -119,8 +126,10 @@ void passTwo(string filename,string outputBin,string listingFile){
     ofstream lstFile(listingFile);
     string line;
     int PC=0;
+    int lineNumber=0;
 
     while(getline(file,line)){
+        lineNumber++;
 
         // cleaning out comment
         size_t commentPos=line.find(";");
@@ -139,10 +148,14 @@ void passTwo(string filename,string outputBin,string listingFile){
             // we have a label
             label=line.substr(0,colonPos);
             if(!isalpha(label[0])){
-                cerr<<"Label must start with a Letter, Invalid Label: '"<<label<<"'"<<endl;
+                cerr<<"Error on line "<<lineNumber<<": Label must start with a Letter, Invalid Label: '"<<label<<"'"<<endl;
+                lstFile<<"ERROR "<<lineNumber<<" Invalid Label: '"<<label<<"'"<<endl;
+                hasError=true;
             }
             if(labelAddress.count(label)==0){
-                cerr<<"No such label found: '"<<label<<"'"<<endl;
+                cerr<<"Error on line "<<lineNumber<<": No such label found: '"<<label<<"'"<<endl;
+                lstFile<<"ERROR "<<lineNumber<<" No such label found: '"<<label<<"'"<<endl;
+                hasError=true;
             }
             line=line.substr(colonPos+1);
             line.erase(0,line.find_first_not_of(" \t\r\n"));
@@ -152,10 +165,13 @@ void passTwo(string filename,string outputBin,string listingFile){
         stringstream ss(line);
         ss>>mnemonic>>operand;
         for(auto &c : mnemonic) c = tolower(c);
-        if(mnemonic.empty() || mnemonic=="SET")continue;// nothing op to perform
+        if(mnemonic.empty() || mnemonic=="set")continue;// nothing op to perform
+        
         if(mnemonicTable.find(mnemonic)== mnemonicTable.end()){
-            cerr<<"Invalid Mnemonic/Instruction found: '"<<mnemonic<<"'"<<endl;
-            return;
+            cerr<<"Error on line "<<lineNumber<<": Invalid Mnemonic/Instruction found: '"<<mnemonic<<"'"<<endl;
+            lstFile<<"ERROR "<<lineNumber<<" Invalid Mnemonic/Instruction found: '"<<mnemonic<<"'"<<endl;
+            hasError=true;
+            continue;
         }
 
         // mnemonic is valid
@@ -171,18 +187,24 @@ void passTwo(string filename,string outputBin,string listingFile){
                 operandval=stoi(operand,&processedCharCnt,0);
 
                 if(processedCharCnt<operand.size()){
-                    cerr<<"Invalid Number format: '"<<operand<<"'"<<endl;
+                    cerr<<"Error on line "<<lineNumber<<": Invalid Number format: '"<<operand<<"'"<<endl;
+                    lstFile<<"ERROR "<<lineNumber<<" Invalid Number format: '"<<operand<<"'"<<endl;
+                    hasError=true;
                 }
             }catch(...){
                 // catch any exception
-                cerr<< " Not a valid number '"<<operand<<"'"<<endl;
+                cerr<<"Error on line "<<lineNumber<<": Not a valid number '"<<operand<<"'"<<endl;
+                lstFile<<"ERROR "<<lineNumber<<" Not a valid number '"<<operand<<"'"<<endl;
+                hasError=true;
             }
             machinecode=operandval;
 
         }else if(mnemonicTable[mnemonic].hasOperand){
             if(operand.empty()){
-                cerr<<"Operand required/Invalid Operand for mnemonic: '"<<mnemonic<<"'"<<endl;
-                return;
+                cerr<<"Error on line "<<lineNumber<<": Operand required/Invalid Operand for mnemonic: '"<<mnemonic<<"'"<<endl;
+                lstFile<<"ERROR "<<lineNumber<<" Operand required for mnemonic: '"<<mnemonic<<"'"<<endl;
+                hasError=true;
+                continue;
             }
 
             // has a operand 
@@ -204,12 +226,16 @@ void passTwo(string filename,string outputBin,string listingFile){
                     operandval=stoi(operand,&processedCharCnt,0);
 
                     if(processedCharCnt<operand.size()){
-                        cerr<<"Invalid Number format: '"<<operand<<"'"<<endl;
+                        cerr<<"Error on line "<<lineNumber<<": Invalid Number format: '"<<operand<<"'"<<endl;
+                        lstFile<<"ERROR "<<lineNumber<<" Invalid Number format: '"<<operand<<"'"<<endl;
+                        hasError=true;
                     }
 
                 }catch(...){
                     // catch any exception
-                    cerr<< " Not a valid number '"<<operand<<"'"<<endl;
+                    cerr<<"Error on line "<<lineNumber<<": Not a valid number '"<<operand<<"'"<<endl;
+                    lstFile<<"ERROR "<<lineNumber<<" Not a valid number '"<<operand<<"'"<<endl;
+                    hasError=true;
                 }
             }
             // creating a 32 bit machinecode
@@ -217,8 +243,10 @@ void passTwo(string filename,string outputBin,string listingFile){
         }else{
             // mnemonic doesn't have a operand
             if(!operand.empty()){
-                cerr<<"Unexpected operand for mnemonic: '"<<mnemonic<<"'"<<endl;
-                return;
+                cerr<<"Error on line "<<lineNumber<<": Unexpected operand for mnemonic: '"<<mnemonic<<"'"<<endl;
+                lstFile<<"ERROR "<<lineNumber<<" Unexpected operand for mnemonic: '"<<mnemonic<<"'"<<endl;
+                hasError=true;
+                continue;
             }
         }
 
@@ -252,6 +280,12 @@ int main(int argc, char* argv[]) {
     passTwo(inputFileName, binFileName, lstFileName);
 
     cout << "Assembly complete." << endl;
+    
+    if (hasError) {
+        cout << "Finished with errors." << endl;
+        return 1;
+    }
+
     cout << "Binary: " << binFileName << endl;
     cout << "Listing: " << lstFileName << endl;
 

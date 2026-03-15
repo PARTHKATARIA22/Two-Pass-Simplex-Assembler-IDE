@@ -10,9 +10,9 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-const tempDir = path.join(__dirname, 'temp');
-if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir);
+const outputDir = path.join(__dirname, 'testfiles', 'outputfiles');
+if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
 }
 
 const isWindows = process.platform === 'win32';
@@ -25,9 +25,9 @@ app.post('/api/run', (req, res) => {
         return res.status(400).json({ success: false, error: 'Code is required' });
     }
 
-    const inputAsmPath = path.join(tempDir, 'input.asm');
-    const inputBinPath = path.join(tempDir, 'input.bin');
-    const inputLstPath = path.join(tempDir, 'input.lst');
+    const inputAsmPath = path.join(outputDir, 'input.asm');
+    const inputBinPath = path.join(outputDir, 'input.bin');
+    const inputLstPath = path.join(outputDir, 'input.lst');
 
     try {
         // Write the assembly code to temp/input.asm
@@ -36,9 +36,12 @@ app.post('/api/run', (req, res) => {
         // Run the assembler
         let assemblerOutput = '';
         try {
-            assemblerOutput = execSync(`"${path.join(__dirname, asmBin)}" "${inputAsmPath}"`, { encoding: 'utf-8', cwd: __dirname });
+            assemblerOutput = execSync(`"${path.join(__dirname, asmBin)}" "${inputAsmPath}"`, { encoding: 'utf-8', cwd: __dirname, timeout: 5000 });
         } catch (asmError) {
             // Assembler failed (e.g. syntax error)
+            if (asmError.code === 'ETIMEDOUT') {
+                return res.json({ success: false, assemblerOutput: 'Error: Assembler execution timed out.', emulatorOutput: '', listing: '' });
+            }
             const errorMsg = asmError.stderr || asmError.stdout || asmError.message;
             return res.json({ success: false, assemblerOutput: errorMsg, emulatorOutput: '', listing: '' });
         }
@@ -46,10 +49,14 @@ app.post('/api/run', (req, res) => {
         // Run the emulator
         let emulatorOutput = '';
         try {
-            emulatorOutput = execSync(`"${path.join(__dirname, emuBin)}" "${inputBinPath}"`, { encoding: 'utf-8', cwd: __dirname });
+            emulatorOutput = execSync(`"${path.join(__dirname, emuBin)}" "${inputBinPath}"`, { encoding: 'utf-8', cwd: __dirname, timeout: 5000 });
         } catch (emuError) {
-            // Emulator failed
-             emulatorOutput = emuError.stderr || emuError.stdout || emuError.message;
+            // Emulator failed or timed out
+            if (emuError.code === 'ETIMEDOUT') {
+                emulatorOutput = 'Error: Emulator execution timed out (possible infinite loop).';
+            } else {
+                emulatorOutput = emuError.stderr || emuError.stdout || emuError.message;
+            }
         }
 
         // Read the listing file
@@ -68,6 +75,23 @@ app.post('/api/run', (req, res) => {
     } catch (err) {
         console.error('Server error:', err);
         res.status(500).json({ success: false, error: 'Internal server error', assemblerOutput: err.message });
+    }
+});
+
+app.get('/api/testfiles', (req, res) => {
+    const testDir = path.join(__dirname, 'testfiles');
+    try {
+        const files = fs.readdirSync(testDir)
+            .filter(f => f.endsWith('.asm') && f !== 'input.asm');
+        
+        const result = files.map(filename => ({
+            name: filename,
+            content: fs.readFileSync(path.join(testDir, filename), 'utf8')
+        }));
+        
+        res.json({ files: result });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

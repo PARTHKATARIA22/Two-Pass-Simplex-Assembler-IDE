@@ -45,6 +45,10 @@ const ISA_REFERENCE = [
 
 function App() {
   const [code, setCode] = useState(SAMPLE_CODE);
+  const [testFiles, setTestFiles] = useState([]);
+  const [activeFile, setActiveFile] = useState(null);
+  const [loadedTestFile, setLoadedTestFile] = useState(null);
+  const [toastError, setToastError] = useState(null);
   const [listing, setListing] = useState('');
   const [emulatorOutput, setEmulatorOutput] = useState('');
   const [assemblerOutput, setAssemblerOutput] = useState('');
@@ -73,6 +77,28 @@ function App() {
   const consoleRef = useRef(null);
 
   const [showComments, setShowComments] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:3001/api/testfiles')
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to load test files');
+        return r.json();
+      })
+      .then(data => setTestFiles(data.files || []))
+      .catch((err) => {
+        setToastError('Error reading test files: ' + err.message);
+        setTimeout(() => setToastError(null), 3000);
+      });
+  }, []);
+
+  const loadTestFile = (file) => {
+    setCode(file.content);
+    setActiveFile(file.name);
+    setLoadedTestFile(file);
+    setListing('');
+    setEmulatorOutput('');
+    setAssemblerOutput('');
+  };
 
   // --- External Logic ---
   const handleRun = async () => {
@@ -319,6 +345,19 @@ function App() {
     if (!listing) return [];
     const lines = listing.split('\n').filter(l => l.trim());
     return lines.map((line) => {
+      if (line.startsWith('ERROR ')) {
+         const parts = line.split(' ');
+         const lineNum = parts[1];
+         const errMsg = parts.slice(2).join(' ');
+         return {
+           isError: true,
+           pc: `Line ${lineNum}`,
+           machineCode: '---',
+           mnemonic: 'ERROR',
+           operand: '',
+           comment: errMsg
+         };
+      }
       const parts = line.split(/\s+/).filter(Boolean);
       let pc = '', machineCode = '', mnemonic = '', operand = '';
       if (parts.length >= 1) pc = parts[0];
@@ -373,6 +412,7 @@ function App() {
     let color = '#d1d5db';
     if (line.toLowerCase().includes('error')) color = '#f87171';
     else if (line.includes('HALT')) color = '#34d399';
+    else if (line.includes('Finished with errors.')) color = '#f87171';
     return <div key={idx} style={{ color }}>{line}</div>;
   };
 
@@ -410,6 +450,13 @@ function App() {
         </div>
       )}
 
+      {/* Floating Toast Error */}
+      {toastError && (
+        <div className="absolute bottom-[250px] right-8 bg-red-600/90 text-white px-4 py-2 rounded-md shadow-lg z-50 text-sm animate-[slideIn_0.3s_ease-out]">
+          {toastError}
+        </div>
+      )}
+
       {/* Top Section - 3 Resizable Columns */}
       <div className="flex-1 flex min-h-0 relative w-full" ref={containerRef}>
 
@@ -421,7 +468,7 @@ function App() {
               <div className="flex gap-2">
                 <button onClick={handleClear} disabled={loading} className="px-2 py-0.5 text-[11px] font-semibold text-[#f9fafb] bg-gray-600 hover:bg-gray-500 rounded-md disabled:opacity-50">Clear</button>
                 <button onClick={handleRun} disabled={loading} className="px-2 py-0.5 text-[11px] font-semibold text-[#f9fafb] bg-[#10b981] hover:bg-[#059669] rounded-md flex items-center gap-1 disabled:opacity-50">
-                  {loading ? 'Running...' : '▶ Run'}
+                  {loading ? 'Running...' : 'Run'}
                 </button>
               </div>
             </div>
@@ -448,7 +495,7 @@ function App() {
                       </>
                     )}
                     {stepPhase === 'done' && (
-                      <button onClick={handleRun} className="px-2 py-0.5 text-[11px] font-semibold text-[#f9fafb] bg-[#10b981] hover:bg-[#059669] rounded-md flex items-center gap-1">▶ Run Full Emulation</button>
+                      <button onClick={handleRun} className="px-2 py-0.5 text-[11px] font-semibold text-[#f9fafb] bg-[#10b981] hover:bg-[#059669] rounded-md flex items-center gap-1">Run Full Emulation</button>
                     )}
                   </>
                 )}
@@ -466,9 +513,46 @@ function App() {
                 </div>
               ))}
             </div>
-            <textarea ref={textareaRef} value={code} onChange={e => setCode(e.target.value)} onKeyDown={handleKeyDown} onScroll={handleTextareaScroll} spellCheck="false"
+            <textarea ref={textareaRef} value={code} 
+              onChange={e => {
+                setCode(e.target.value);
+                setActiveFile(null);
+              }} 
+              onKeyDown={handleKeyDown} onScroll={handleTextareaScroll} spellCheck="false"
               className="flex-1 bg-[#000000] text-[#f9fafb] font-sans resize-none outline-none border-none p-[8px]"
               style={{ fontSize: '14px', lineHeight: '1.6' }} />
+          </div>
+          
+          <div className="flex items-center h-[44px] shrink-0 border-t border-[#374151] px-2 py-1.5 bg-[#1f2937] overflow-x-auto overflow-y-hidden" style={{ flexShrink: 0 }}>
+            <span className="text-xs text-gray-400 uppercase mr-2 shrink-0">TEST FILES:</span>
+            {testFiles.length === 0 ? (
+              <span className="text-xs text-gray-400 italic">No test files found</span>
+            ) : (
+              testFiles.map(f => {
+                const isActive = activeFile === f.name;
+                const isModified = loadedTestFile?.name === f.name && code !== f.content;
+                return (
+                  <div key={f.name} className="flex items-center mr-2 shrink-0">
+                    <button
+                      onClick={() => loadTestFile(f)}
+                      className={`font-mono text-xs px-3 py-1 rounded transition-colors whitespace-nowrap ${isActive ? 'bg-blue-700 text-white ring-1 ring-blue-400' : 'bg-gray-700 text-gray-200 hover:bg-blue-700 hover:text-white'}`}
+                      title={f.name.length > 20 ? f.name : ''}
+                    >
+                      {f.name.length > 20 ? f.name.substring(0, 17) + '...' : f.name}
+                    </button>
+                    {isModified && (
+                      <button
+                        onClick={() => loadTestFile(f)}
+                        className="ml-1 px-1.5 py-1 text-[10px] bg-gray-600 text-gray-200 hover:bg-gray-500 rounded transition-colors"
+                        title="Reset to original content"
+                      >
+                        [↺ Reset]
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -502,7 +586,19 @@ function App() {
                     </thead>
                     <tbody className="text-sm font-sans leading-relaxed">
                       {(mode === 'normal' ? listingRows : listingRowsStep).map((row, idx) => {
-                        const isActive = activePCHex && row.pc.toLowerCase() === activePCHex;
+                        const isActive = activePCHex && row.pc && row.pc.toLowerCase() === activePCHex && !row.isError;
+                        if (row.isError) {
+                          return (
+                            <tr key={idx} className="bg-red-900/30 text-red-400 border-b border-red-500/30">
+                              <td className="px-3 py-1 truncate font-bold" title={row.pc}>{row.pc}</td>
+                              <td className="px-3 py-1 truncate" title={row.machineCode}>{row.machineCode}</td>
+                              <td className="px-3 py-1 truncate font-bold" title={row.mnemonic}>{row.mnemonic}</td>
+                              <td className="px-3 py-1 truncate" colSpan={showComments ? 2 : 1} title={row.comment}>
+                                {row.comment}
+                              </td>
+                            </tr>
+                          );
+                        }
                         return (
                           <tr key={idx} className={isActive ? 'bg-[#78350f] text-[#fbbf24]' : 'hover:bg-[#0a0a0a] border-b border-[#222222]/30 animate-[slideIn_0.3s_ease-out]'}>
                             <td className={`px-3 py-1 truncate ${isActive ? '' : 'text-[#60a5fa]'}`} title={row.pc}>{row.pc}</td>

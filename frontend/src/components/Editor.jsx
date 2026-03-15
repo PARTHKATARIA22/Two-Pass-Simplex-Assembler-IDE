@@ -33,7 +33,7 @@ const Editor = ({ code, setCode, onRun, onClear, isLoading }) => {
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
         <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">ASM CODE EDITOR</span>
         <div className="flex gap-2">
-           <button
+          <button
             onClick={onClear}
             className="px-3 py-1 text-xs font-semibold text-gray-300 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
           >
@@ -54,14 +54,14 @@ const Editor = ({ code, setCode, onRun, onClear, isLoading }) => {
                 Running...
               </>
             ) : (
-              '▶ Run'
+              'Run'
             )}
           </button>
         </div>
       </div>
-      
+
       <div className="flex flex-1 overflow-hidden relative">
-        <div 
+        <div
           className="w-12 bg-gray-900 border-r border-gray-800 flex flex-col items-end py-4 px-2 select-none overflow-hidden text-gray-500 font-mono text-sm leading-relaxed"
           onScroll={handleScroll}
           ref={textareaRef}
@@ -76,7 +76,7 @@ const Editor = ({ code, setCode, onRun, onClear, isLoading }) => {
           onKeyDown={handleKeyDown}
           onScroll={(e) => {
             if (textareaRef.current) {
-               textareaRef.current.scrollTop = e.target.scrollTop;
+              textareaRef.current.scrollTop = e.target.scrollTop;
             }
           }}
           spellCheck="false"

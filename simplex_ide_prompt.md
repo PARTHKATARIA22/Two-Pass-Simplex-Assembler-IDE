@@ -62,7 +62,7 @@ Build a Node.js + Express server with a single POST endpoint: `/api/run`
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  🔧 SIMPLEX Assembler IDE                          [▶ Run]  [Clear] │
+│  🔧 SIMPLEX Assembler IDE                          [Run]  [Clear] │
 ├──────────────────────┬──────────────────────┬───────────────────────┤
 │                      │                      │                       │
 │   ASM CODE EDITOR    │   LISTING VIEW       │   EMULATOR OUTPUT     │
@@ -97,7 +97,7 @@ Build a Node.js + Express server with a single POST endpoint: `/api/run`
 - Monospace font (`font-mono`), dark background (`bg-gray-900`), light text
 - Placeholder text: a short sample SIMPLEX program
 - Line numbers are computed from the textarea value and rendered in a separate `<div>` to the left, perfectly aligned
-- Below the editor: a `[▶ Run]` button (green) and a `[Clear]` button (gray)
+- Below the editor: a `[Run]` button (green) and a `[Clear]` button (gray)
 - While running, show a loading spinner on the Run button and disable it
 
 ### `ListingTable.jsx`
