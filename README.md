@@ -12,6 +12,7 @@ A browser-based full-stack IDE that allows users to write, assemble, and emulate
 - **Step Mode**: Step-through debugging line by line (Pass 1 label discovery & Pass 2 machine code generation).
 - **Listing View**: See the generated program counter (PC), associated machine code, mnemonic, and operator for each instruction.
 - **Console Log**: Real-time terminal output tracking assembler messages and emulator halts or errors.
+- **Test File Manager**: Easily load pre-written `.asm` test files from the backend directly into the editor for quick testing and demonstration.
 
 ## Tech Stack
 
@@ -24,20 +25,25 @@ A browser-based full-stack IDE that allows users to write, assemble, and emulate
 ```
 TwoPassAssembler/
 ├── backend/
-│   ├── server.js          # Express API server for orchestration
-│   ├── asm.cpp            # Two-pass assembler logic
-│   ├── emu.cpp            # Emulator execution logic
-│   └── temp/              # Temporary space for .asm, .bin, and .lst artifacts
+│   ├── server.js               # Express API server for orchestration
+│   ├── asm.cpp                 # Two-pass assembler logic
+│   ├── emu.cpp                 # Emulator execution logic
+│   └── testfiles/              # Pre-written assembly test files
+│       ├── (e.g., bubble.asm, pascaltriangle.asm)
+│       └── outputfiles/        # Output directory for assembler and emulator
+│           ├── input.asm       # Temporary assembly file
+│           ├── input.bin       # Compiled binary machine code
+│           └── input.lst       # Assembler listing file
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx        # Main application state and layout components
-│   │   ├── components/    # Reusable UI components for Registers, Editor, Memory, etc.
-│   │   ├── index.css      # Core Tailwind styling overrides
-│   │   └── main.jsx       # React DOM entry point
-│   ├── index.html         # Document root
-│   ├── package.json       # Frontend dependencies and scripts
-│   └── tailwind.config.js # Custom configuration for IDE dark mode
-└── README.md              # Project documentation
+│   │   ├── App.jsx             # Main application state and layout components
+│   │   ├── components/         # Reusable UI components
+│   │   ├── index.css           # Core Tailwind styling overrides
+│   │   └── main.jsx            # React DOM entry point
+│   ├── index.html              # Document root
+│   ├── package.json            # Frontend dependencies and scripts
+│   └── tailwind.config.js      # Custom configuration for IDE dark mode
+└── README.md                   # Project documentation
 ```
 
 ## Setup and Installation
@@ -51,14 +57,14 @@ Be sure you have [Node.js](https://nodejs.org/) and [G++ (GCC)](https://gcc.gnu.
 cd backend
 
 # Compile the core Engine binaries (if not already compiled)
-g++ asm.cpp -o asm
-g++ emu.cpp -o emu
+g++ asm.cpp -o asm.exe
+g++ emu.cpp -o emu.exe
 
 # Install dependencies
 npm install
 
-# Start the Node.js API server (runs on port 3001)
-node server.js
+# Start the Node.js API server using nodemon for auto-reloading
+npm run dev
 ```
 
 ### 2. Starting the Frontend UI
@@ -72,25 +78,22 @@ cd frontend
 # Install UI dependencies
 npm install
 
-# Start the Vite development server (usually runs on port 5173)
+# Start the Vite development server
 npm run dev
 ```
 
-Visit the displayed local host link (e.g., `http://localhost:5173`) in your web browser to start using the IDE!
+Visit the displayed local host link (e.g., `http://localhost:5173`) in your web browser to start using the IDE.
 
-## Sample Program to Try
+## Usage Guide
 
-Below is a simple SIMPLEX program to load two values into local memory and add them. Paste it into your editor to see the IDE in action!
-
-```asm
-; Simple test: load two values and add them
-        ldc 10      ; A = 10
-        stl 0       ; local[0] = 10
-        ldc 20      ; A = 20
-        ldl 0       ; B = 20, A = 10
-        add         ; A = 30
-        halt
-```
+1. **Writing Code**: Type your SIMPLEX assembly code directly into the ASM Code Editor.
+2. **Loading Test Files**: Click on any of the test files listed under the "TEST FILES" bar at the bottom of the editor. This will automatically load the file's contents from the `backend/testfiles/` directory into the editor. If you modify the loaded code, a Reset button will appear allowing you to revert to the original content.
+3. **Execution**: Click the "Run" button to assemble and emulate the code. All generated outputs (source, binary, and listing) will be safely written to `backend/testfiles/outputfiles/`.
+4. **Step Mode**: Use the "Step Mode" button to trace through the two-pass assembly process step-by-step.
+5. **Viewing Results**:
+   - The **Listing View** shows the generated machine code and memory addresses.
+   - The **Registers & Memory** panel displays the final state of the CPU and a dump of all non-zero memory locations in the data section.
+   - The **Console Log** shows any assembler errors, warnings, or standard output.
 
 ## Notes for Windows Users
 
