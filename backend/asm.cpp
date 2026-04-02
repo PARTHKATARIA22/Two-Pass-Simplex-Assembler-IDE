@@ -1,8 +1,8 @@
 /*******************************************************************************
  * CS2206 Mini Project — Two Pass Assembler / Emulator
  * Name:     PARTH KATARIA
- * Roll NO:   2401CS88
- * Date:        March 2026
+ * Roll NO: 2401CS88
+ * Date: March 2026
  *
  * DECLARATION OF AUTHORSHIP
  * --------------------------
@@ -61,6 +61,7 @@ void generateListfile(ofstream &lstFile,int PC,int machineCode,string mnemonic,s
 }
 
 void passOne(string filename){
+    // read only file
     ifstream file(filename);
     string line;
     int PC=0;
